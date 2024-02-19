@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Brazilian Biomes Map</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol/ol.css" type="text/css">
+    <style>
+        .map {
+            width: 100%;
+            height:600px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/ol/ol.js"></script>
+</head>
+<body>
+<div id="map" class="map"></div>
+<script type="text/javascript">
+    var map = new ol.Map({
+        target: 'map',
+        layers: [
+            new ol.layer.Tile({
+                source: new ol.source.OSM()
+            }),
+            new ol.layer.Vector({
+                source: new ol.source.Vector({
+                    url: 'URL_TO_YOUR_GEOJSON_FILE',
+                    format: new ol.format.GeoJSON()
+                }),
+                style: new ol.style.Style({
+                    // Define your style here
+                })
+            })
+        ],
+        view: new ol.View({
+            center: ol.proj.fromLonLat([-52, -14]), // Centered over Brazil
+            zoom: 4
+        })
+    });
+</script>
+</body>
+</html>
