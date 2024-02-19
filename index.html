@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <title>Brazilian Biomes Map</title>
-    <link href="https://cdn.jsdelivr.net/npm/openlayers@4.6.5/dist/ol.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css">
     <style>
         .map {
             width: 100%;
@@ -15,26 +15,55 @@
             z-index: 100;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/openlayers@4.6.5/dist/ol.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.2/proj4.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>
 </head>
 <body>
 <input id="search" type="text" placeholder="Search for a place...">
 <div id="map" class="map"></div>
+<div id="legend" style="position: absolute; bottom: 20px; left: 20px; background: white; padding: 10px;">
+    <h2>Biome Legend</h2>
+</div>
 <script type="text/javascript">
+    // Assuming you've included proj4js in your project
+    proj4.defs("EPSG:4674", "+proj=longlat +ellps=GRS80 +no_defs");
+    ol.proj.proj4.register(proj4);
+
+    // Now, when you load your GeoJSON, you'll transform the coordinates
+    var vectorSource = new ol.source.Vector({
+        url: 'biomes.geojson',
+        format: new ol.format.GeoJSON({
+            featureProjection: 'EPSG:3857', // Target projection
+            dataProjection: 'EPSG:4674', // Source projection
+        })
+    });
+
+    var biomeStyles = {
+        'Amazônia': new ol.style.Style({fill: new ol.style.Fill({color: 'rgba(106, 196, 122, 0.5)'}),}),
+        'Cerrado': new ol.style.Style({fill: new ol.style.Fill({color: 'rgba(252, 232, 131, 0.5)'}),}),
+        'Caatinga': new ol.style.Style({fill: new ol.style.Fill({color: 'rgba(233, 154, 77, 0.5)'}),}),
+        'Pampa': new ol.style.Style({fill: new ol.style.Fill({color: 'rgba(196, 223, 155, 0.5)'}),}),
+        'Pantanal': new ol.style.Style({fill: new ol.style.Fill({color: 'rgba(86, 180, 233, 0.5)'}),}),
+        'Mata Atlântica': new ol.style.Style({fill: new ol.style.Fill({color: 'rgba(30, 130, 76, 0.5)'}),}),
+        // Add or adjust biomes as necessary
+    };
+
+    var styleFunction = function(feature) {
+        var biomeName = feature.get('name_biome');
+        return biomeStyles[biomeName] || new ol.style.Style({
+            fill: new ol.style.Fill({color: 'rgba(255, 255, 255, 0.1)'}), // Default style
+        });
+    };
+
+    var vectorLayer = new ol.layer.Vector({
+        source: vectorSource,
+    });
+
     var map = new ol.Map({
         target: 'map',
         layers: [
             new ol.layer.Tile({
                 source: new ol.source.OSM()
-            }),
-            new ol.layer.Vector({
-                source: new ol.source.Vector({
-                    url: 'URL_TO_YOUR_GEOJSON_FILE',
-                    format: new ol.format.GeoJSON()
-                }),
-                style: new ol.style.Style({
-                    // Define your style here
-                })
             })
         ],
         view: new ol.View({
@@ -42,6 +71,22 @@
             zoom: 4
         })
     });
+
+    Object.keys(biomeStyles).forEach(function(biome) {
+        var color = biomeStyles[biome].getFill().getColor();
+        var item = document.createElement('div');
+        var key = document.createElement('span');
+        key.style.display = 'inline-block';
+        key.style.width = '20px';
+        key.style.height = '20px';
+        key.style.marginRight = '5px';
+        key.style.backgroundColor = color;
+        item.appendChild(key);
+        item.appendChild(document.createTextNode(biome));
+        document.getElementById('legend').appendChild(item);
+    });
+
+    map.addLayer(vectorLayer);
 
     document.getElementById('search').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
